@@ -57,7 +57,7 @@ on: [push]
 jobs:
   test-everywhere:
     name: Test Action on all platforms
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v3
@@ -83,7 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-22.04, windows-2019, macOS-latest]
 
     steps:
       - uses: actions/checkout@v3
