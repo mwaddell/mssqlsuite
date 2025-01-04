@@ -1,5 +1,5 @@
 param (
-    [ValidateSet("sqlclient", "sqlpackage", "sqlengine", "localdb")]
+    [ValidateSet("sqlclient", "sqlpackage", "sqlengine", "localdb", "fulltext")]
     [string[]]$Install,
     [string]$SaPassword,
     [switch]$ShowLog,
@@ -20,6 +20,13 @@ if ("sqlengine" -in $Install) {
         docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$SaPassword" -e "MSSQL_COLLATION=$Collation" --name sql -p 1433:1433 --memory="2g" -d "mcr.microsoft.com/mssql/server:$Version-latest"
         Write-Output "Docker finished running"
         Start-Sleep 5
+
+        # Full-Text Search is not preinstalled on any Microsoft-provided docker images
+        if ("fulltext" -in $Install) {
+            docker exec -it sql bash -c "apt-get update && apt-get install -y mssql-server-fts"
+            docker exec -it sql bash -c "systemctl restart mssql-server"
+        }
+
         if ($ShowLog) {
             docker ps -a
             docker logs -t sql
@@ -33,6 +40,12 @@ if ("sqlengine" -in $Install) {
         docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$SaPassword" -e "MSSQL_COLLATION=$Collation" --name sql -p 1433:1433 -d "mcr.microsoft.com/mssql/server:$Version-latest"
         Write-Output "Waiting for docker to start"
         Start-Sleep -Seconds 10
+
+        # Full-Text Search is not preinstalled on any Microsoft-provided docker images
+        if ("fulltext" -in $Install) {
+            docker exec -it sql bash -c "apt-get update && apt-get install -y mssql-server-fts"
+            docker exec -it sql bash -c "systemctl restart mssql-server"
+        }
 
         if ($ShowLog) {
             docker ps -a
@@ -73,7 +86,9 @@ if ("sqlengine" -in $Install) {
         Invoke-WebRequest -Uri $boxUri -OutFile sqlsetup.box
         Start-Process -Wait -FilePath ./sqlsetup.exe -ArgumentList /qs, /x:setup
 
-        .\setup\setup.exe /q /ACTION=Install /INSTANCENAME=MSSQLSERVER /FEATURES=SQLEngine /UPDATEENABLED=0 /SQLSVCACCOUNT='NT SERVICE\MSSQLSERVER' /SQLSYSADMINACCOUNTS='BUILTIN\ADMINISTRATORS' /TCPENABLED=1 /NPENABLED=0 /IACCEPTSQLSERVERLICENSETERMS /SQLCOLLATION=$Collation $installOptions
+        $features = if ("fulltext" -in $Install) { "SQLEngine,FullText" } else { "SQLEngine" }
+
+        .\setup\setup.exe /q /ACTION=Install /INSTANCENAME=MSSQLSERVER /FEATURES=$features /UPDATEENABLED=0 /SQLSVCACCOUNT='NT SERVICE\MSSQLSERVER' /SQLSYSADMINACCOUNTS='BUILTIN\ADMINISTRATORS' /TCPENABLED=1 /NPENABLED=0 /IACCEPTSQLSERVERLICENSETERMS /SQLCOLLATION=$Collation $installOptions
 
         Set-ItemProperty -path "HKLM:\Software\Microsoft\Microsoft SQL Server\MSSQL$versionMajor.MSSQLSERVER\MSSQLSERVER\" -Name LoginMode -Value 2
         Restart-Service MSSQLSERVER

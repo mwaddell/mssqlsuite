@@ -14,10 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install sqlengine
+      - name: Install sqlengine with full-text search
         uses: ./
         with:
-          install: sqlengine
+          install: sqlengine,fulltext
           sa-password: c0MplicatedP@ssword
           show-log: true
           collation: Latin1_General_BIN
@@ -48,3 +48,7 @@ jobs:
         run: |
           ./Test-Collation -ExpectedCollation Latin1_General_BIN -UserName sa -Password c0MplicatedP@ssword
 
+      - name: Check full-text search
+        shell: pwsh
+        run: |
+          ./Test-FullTextSearch -UserName sa -Password c0MplicatedP@ssword -ExpectedStatus Running
