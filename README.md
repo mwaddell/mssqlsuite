@@ -122,4 +122,3 @@ The scripts and documentation in this project are released under the [MIT Licens
 ## Notes
 
 The `SqlServer` PowerShell module is included on the Windows runner. You can find more information about what's installed on GitHub runners on their [docs page](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software).
-
