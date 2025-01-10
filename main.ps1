@@ -13,13 +13,19 @@ if ("sqlengine" -in $Install) {
     if ($ismacos) {
         Write-Output "mac detected, installing colima and docker"
         $Env:HOMEBREW_NO_AUTO_UPDATE = 1
-        brew install docker colima qemu
+        brew install --formula docker colima qemu
         colima --verbose start -a x86_64 --cpu 4 --memory 4 --runtime docker
     }
 
     if ($ismacos -or $islinux) {
         Write-Output "linux/mac detected, downloading the docker container"
-
+        if (Test-Path /tmp/mssql.tar) {
+            docker load -i /tmp/mssql.tar
+        } else {
+            docker pull "mcr.microsoft.com/mssql/server:$Version-latest"
+            docker save -o /tmp/mssql.tar "mcr.microsoft.com/mssql/server:$Version-latest"
+        }
+        
         docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$SaPassword" -e "MSSQL_COLLATION=$Collation" --name sql -p 1433:1433 -d "mcr.microsoft.com/mssql/server:$Version-latest"
         Write-Output "Waiting for docker to start"
 
@@ -58,8 +64,13 @@ if ("sqlengine" -in $Install) {
                 $versionMajor = 16
             }
         }
-        Invoke-WebRequest -Uri $exeUri -OutFile sqlsetup.exe
-        Invoke-WebRequest -Uri $boxUri -OutFile sqlsetup.box
+
+        if (-Not (Test-Path -Path "sqlsetup.exe")) {
+            Invoke-WebRequest -Uri $exeUri -OutFile sqlsetup.exe
+        }
+        if (-Not (Test-Path -Path "sqlsetup.box")) {
+            Invoke-WebRequest -Uri $boxUri -OutFile sqlsetup.box
+        }
         Start-Process -Wait -FilePath ./sqlsetup.exe -ArgumentList /qs, /x:setup
 
         .\setup\setup.exe /q /ACTION=Install /INSTANCENAME=MSSQLSERVER /FEATURES=SQLEngine /UPDATEENABLED=0 /SQLSVCACCOUNT='NT SERVICE\MSSQLSERVER' /SQLSYSADMINACCOUNTS='BUILTIN\ADMINISTRATORS' /TCPENABLED=1 /NPENABLED=0 /IACCEPTSQLSERVERLICENSETERMS /SQLCOLLATION=$Collation /USESQLRECOMMENDEDMEMORYLIMITS
@@ -104,19 +115,9 @@ if ("sqlclient" -in $Install) {
 if ("sqlpackage" -in $Install) {
     Write-Output "installing sqlpackage"
 
-    if ($ismacos) {
-        curl "https://aka.ms/sqlpackage-macos" -4 -sL -o '/tmp/sqlpackage.zip'
-        $log = unzip /tmp/sqlpackage.zip -d $HOME/sqlpackage
-        chmod +x $HOME/sqlpackage/sqlpackage
-        sudo ln -sf $HOME/sqlpackage/sqlpackage /usr/local/bin
-        if ($ShowLog) {
-            $log
-            sqlpackage /version
-        }
-    }
-
-    if ($islinux) {
-        curl "https://aka.ms/sqlpackage-linux" -4 -sL -o '/tmp/sqlpackage.zip'
+    if ($ismacos -or $islinux) {
+        $pkgurl = if ($ismacos) { "https://aka.ms/sqlpackage-macos" } else { "https://aka.ms/sqlpackage-linux" }
+        curl $pkgurl -4 -sL -o /tmp/sqlpackage.zip
         $log = unzip /tmp/sqlpackage.zip -d $HOME/sqlpackage
         chmod +x $HOME/sqlpackage/sqlpackage
         sudo ln -sf $HOME/sqlpackage/sqlpackage /usr/local/bin
@@ -139,16 +140,23 @@ if ("sqlpackage" -in $Install) {
 
 if ("localdb" -in $Install) {
     if ($iswindows) {
+        if (-not (Test-Path C:\temp)) {
+            mkdir C:\temp
+        }
+        Push-Location C:\temp
+        $ProgressPreference = "SilentlyContinue"
         if ($Version -eq "2022") {
             Write-Output "LocalDB for SQL Server 2022 not available yet."
         } else {
             Write-Host "Downloading SqlLocalDB"
-            $ProgressPreference = "SilentlyContinue"
             switch ($Version) {
                 "2019" { $uriMSI = "https://download.microsoft.com/download/7/c/1/7c14e92e-bdcb-4f89-b7cf-93543e7112d1/SqlLocalDB.msi" }
                 "2022" { $uriMSI = "TBD" }
             }
-            Invoke-WebRequest -Uri $uriMSI -OutFile SqlLocalDB.msi
+
+            if (-Not (Test-Path -Path "SqlLocalDB.msi")) {
+                Invoke-WebRequest -Uri $uriMSI -OutFile SqlLocalDB.msi
+            }
             Write-Host "Installing"
             Start-Process -FilePath "SqlLocalDB.msi" -Wait -ArgumentList "/qn", "/norestart", "/l*v SqlLocalDBInstall.log", "IACCEPTSQLLOCALDBLICENSETERMS=YES";
             Write-Host "Checking"

@@ -26,6 +26,26 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - if: ${{ runner.os == 'Windows' && contains(inputs.install, 'sqlengine') }}
+      uses: actions/cache@v3
+      with:
+        path: |
+          C:\Temp\sqlsetup.exe
+          C:\Temp\sqlsetup.box
+        key: "mssqlsuite-sqlengine-${{ runner.os }}-${{ inputs.version }}"
+
+    - if: ${{ runner.os == 'Windows' && contains(inputs.install, 'localdb') }}
+      uses: actions/cache@v3
+      with:
+        path: C:\Temp\SqlLocalDB.msi
+        key: "mssqlsuite-localdb-${{ runner.os }}-${{ inputs.version }}"
+
+    - if: ${{ runner.os != 'Windows' && contains(inputs.install, 'sqlengine') }}
+      uses: actions/cache@v3
+      with:
+        path: /tmp/mssql.tar
+        key: "mssqlsuite-sqlengine-${{ runner.os }}-${{ inputs.version }}"
+
     - id: psoutput
       shell: pwsh
       env:

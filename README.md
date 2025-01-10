@@ -32,17 +32,17 @@ None
 
 ### Details
 
-| Application | Keyword | OS | Details | Time |
+| Application | Keyword | OS | Details | Time (cached) |
 | -------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------- |
-| SQL Engine | sqlengine | Linux | Docker container with SQL Server 2022, accessible at `localhost` | ~30s |
+| SQL Engine | sqlengine | Linux | Docker container with SQL Server 2022, accessible at `localhost` | ~30s (TBD) |
 | SqlLocalDB | localdb | Linux | Not supported | N/A |
 | Client Tools | sqlclient | Linux | Includes sqlcmd, bcp, and odbc drivers | ~15s |
 | sqlpackage | sqlpackage | Linux | Installed from web | ~5s |
-| SQL Engine | sqlengine | Windows | Full install of SQL Server 2022, accessible at `localhost`. Docker took like 15 minutes. Windows and SQL authentication both supported. | ~3m |
-| SqlLocalDB | localdb | Windows | Accessible at `(localdb)\MSSQLLocalDB` | ~30s |
+| SQL Engine | sqlengine | Windows | Full install of SQL Server 2022, accessible at `localhost`. Docker took like 15 minutes. Windows and SQL authentication both supported. | ~3m (TBD) |
+| SqlLocalDB | localdb | Windows | Accessible at `(localdb)\MSSQLLocalDB` | ~30s (TBD) |
 | Client Tools | sqlclient | Windows | Already included in runner, including sqlcmd, bcp, and odbc drivers | N/A |
 | sqlpackage | sqlpackage | Windows | Installed using chocolatey | ~20s |
-| SQL Engine | sqlengine | macOS | Docker container with SQL Server 2022 accessible at `localhost`. | ~7m |
+| SQL Engine | sqlengine | macOS | Docker container with SQL Server 2022 accessible at `localhost`. | ~7m (TBD) |
 | SqlLocalDB | localdb | macOS | Not supported | N/A |
 | Client Tools | sqlclient | macOS | Includes sqlcmd, bcp, and odbc drivers | ~20s |
 | sqlpackage | sqlpackage | macOS | Installed from web | ~5s |
